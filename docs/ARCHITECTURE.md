@@ -7,6 +7,9 @@ app/src/main/java/com/yunki/youtubeskip/
   MainActivity.kt
   accessibility/
     AccessibilityEventLogPolicy.kt
+    AccessibilityNodeScanner.kt
+    AccessibilityNodeScanThrottle.kt
+    AccessibilityNodeSnapshot.kt
     AccessibilityServiceStatus.kt
     YouTubeAccessibilityService.kt
   ui/
@@ -15,7 +18,7 @@ app/src/main/java/com/yunki/youtubeskip/
     AppLogger.kt
 ```
 
-The current app registers a minimal accessibility service shell, provides a Compose button that opens Android Accessibility Settings, and emits debug-only safe Logcat messages for supported YouTube accessibility events. Skip-button detection, node traversal, and click behavior are not implemented yet.
+The current app registers a minimal accessibility service shell, provides a Compose button that opens Android Accessibility Settings, emits debug-only safe Logcat messages for supported YouTube accessibility events, and performs bounded debug-only node inspection. Skip-button detection and click behavior are not implemented yet.
 
 ## Planned Package Structure
 
@@ -44,7 +47,7 @@ Planned classes should be added only when they have real behavior.
 
 ### `YouTubeAccessibilityService`
 
-Current Android framework entry point for accessibility events. It remains thin: ignore null and non-YouTube events, handle only window content/state changes, and emit safe debug-only event logs through `AppLogger`. Future node traversal, detection, and click execution should still be delegated to dedicated collaborators.
+Current Android framework entry point for accessibility events. It remains thin: ignore null and non-YouTube events, handle only window content/state changes, emit safe debug-only event logs through `AppLogger`, and delegate bounded debug node inspection to `AccessibilityNodeScanner`. Future detection and click execution should still be delegated to dedicated collaborators.
 
 ### `AccessibilityEventLogPolicy`
 
@@ -52,7 +55,15 @@ Current helper for readable event type names and log-only throttling. It only su
 
 ### `AccessibilityNodeScanner`
 
-Planned component responsible for safe traversal of accessibility node trees from YouTube. It should handle null nodes and stale nodes defensively.
+Current debug-only component responsible for safe, iterative traversal of visible accessibility node trees from YouTube. It visits at most 200 nodes, scans to depth 20, skips editable/input-looking nodes for logging, keeps only immutable snapshots, and handles stale nodes defensively. It does not click, mutate, persist, or transmit node data.
+
+### `AccessibilityNodeSnapshot`
+
+Current immutable debug data model for node metadata. Text and content descriptions are trimmed, whitespace-normalized, and truncated to 80 characters before logging.
+
+### `AccessibilityNodeScanThrottle`
+
+Current in-memory logging throttle for full node scans. It allows at most one scan every 1000 ms and does not suppress future detection logic.
 
 ### `SkipButtonDetector`
 
@@ -78,11 +89,12 @@ Current Compose UI shows the app status, target app, and a short Logcat note. Fu
 
 1. Android delivers an accessibility event.
 2. `YouTubeAccessibilityService` ignores events outside `com.google.android.youtube`.
-3. The service applies debounce and cooldown rules.
-4. `AccessibilityNodeScanner` gathers relevant visible nodes.
-5. `SkipButtonDetector` checks normalized text and content descriptions using `SkipButtonMatchers`.
-6. `NodeClickExecutor` activates the best matched actionable node.
-7. The service records only local operational state needed for cooldown or UI status.
+3. The service logs safe debug-only event metadata for supported event types.
+4. During Stage 4 debug builds, `AccessibilityNodeScanner` gathers bounded immutable snapshots for inspection only.
+5. Future debounce and cooldown rules will be added before automatic detection/clicking.
+6. Future `SkipButtonDetector` will check normalized text and content descriptions using `SkipButtonMatchers`.
+7. Future `NodeClickExecutor` will activate the best matched actionable node.
+8. The service records only local operational state needed for throttling, cooldown, or UI status.
 
 ## Intended Click Fallback Order
 

@@ -8,8 +8,8 @@ YouTube Skip is an Android-only Kotlin app intended to explore automatic activat
 - Jetpack Compose UI is present.
 - Accessibility service registration is present.
 - Debug-only emulator event logging is present for supported YouTube accessibility events.
+- Debug-only bounded node inspection is present for supported YouTube accessibility events.
 - Skip-button detection and click behavior are not implemented yet.
-- Accessibility node inspection is not implemented yet.
 - The initial development target is a Pixel 8 Android emulator.
 - Physical-device testing will eventually be required because accessibility behavior can differ from emulator behavior.
 
@@ -63,15 +63,26 @@ Run Android lint:
 
 ## Debug Event Logging
 
-In debug builds, the accessibility service logs safe YouTube event metadata to Android Studio Logcat. Filter Logcat with:
+In debug builds, the accessibility service logs safe YouTube event metadata and bounded node-inspection metadata to Android Studio Logcat. Filter Logcat with:
 
 ```text
 tag:YouTubeSkip
 ```
 
-Logs contain only the supported event type name, the package name `com.google.android.youtube`, and the event timestamp. They do not include node text, content descriptions, view IDs, class names, window content, user-entered text, URLs, or account information.
+Event logs contain only the supported event type name, the package name `com.google.android.youtube`, and the event timestamp.
 
-Node inspection, skip-button detection, and clicking are not implemented yet.
+Node inspection logs are debug-only, in-memory, and bounded to 200 visited nodes and depth 20 per scan. Full scans are throttled to at most once every 1000 ms. Logged node fields may include depth, normalized text, normalized content description, class name, view ID, clickable/enabled flags, and screen bounds. Text and content descriptions are whitespace-normalized and truncated to 80 characters. Editable text fields are omitted. Logs are not persisted or transmitted.
+
+Useful Logcat search terms:
+
+```text
+nodeScan
+Skip
+skip
+clickable=true
+```
+
+Skip-button detection and clicking are not implemented yet.
 
 ## Roadmap
 

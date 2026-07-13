@@ -40,6 +40,11 @@ Acceptance criteria:
 - Node traversal handles null and stale nodes safely.
 - Traversal is isolated outside the service.
 - Inspection can identify visible candidate text nodes from YouTube.
+- Debug-only inspection logs bounded node metadata with `tag:YouTubeSkip`.
+- Scans visit at most 200 nodes and depth 20.
+- Full node scans are throttled to at most once every 1000 ms.
+- Logs are not persisted or transmitted.
+- Clicking and skip-button detection are not implemented in this stage.
 
 ## 5. Pure Text Normalization and Matching
 
