@@ -33,6 +33,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    testOptions {
+        val testUserHome = layout.buildDirectory.dir("test-user-home")
+        unitTests.all { testTask ->
+            testTask.doFirst {
+                testUserHome.get().asFile.mkdirs()
+            }
+            testTask.systemProperty(
+                "user.home",
+                testUserHome.get().asFile.absolutePath,
+            )
+        }
+    }
 }
 
 kotlin {
@@ -47,6 +60,10 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
 }

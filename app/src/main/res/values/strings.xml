@@ -2,7 +2,8 @@
 <resources>
     <string name="app_name">YouTube Skip</string>
     <string name="home_title">YouTube Ad Skip</string>
-    <string name="accessibility_not_configured">Accessibility service is registered but not enabled yet.</string>
+    <string name="accessibility_service_enabled">Accessibility service: Enabled</string>
+    <string name="accessibility_service_disabled">Accessibility service: Disabled</string>
     <string name="target_app_youtube">Target app: YouTube</string>
     <string name="open_accessibility_settings">Open Accessibility Settings</string>
     <string name="accessibility_service_label">YouTube Skip</string>
