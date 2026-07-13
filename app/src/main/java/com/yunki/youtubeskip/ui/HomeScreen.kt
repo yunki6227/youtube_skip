@@ -19,19 +19,22 @@ import androidx.compose.ui.unit.dp
 import com.yunki.youtubeskip.R
 
 @Composable
-fun YouTubeSkipApp() {
+fun YouTubeSkipApp(onOpenAccessibilitySettings: () -> Unit = {}) {
     MaterialTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
-            HomeScreen()
+            HomeScreen(onOpenAccessibilitySettings = onOpenAccessibilitySettings)
         }
     }
 }
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    onOpenAccessibilitySettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(modifier = modifier) { innerPadding ->
         Column(
             modifier = Modifier
@@ -54,8 +57,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.bodyLarge,
             )
             Button(
-                onClick = {},
-                enabled = false,
+                onClick = onOpenAccessibilitySettings,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(text = stringResource(R.string.open_accessibility_settings))

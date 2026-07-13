@@ -20,6 +20,7 @@ Acceptance criteria:
 - Service configuration targets only `com.google.android.youtube`.
 - No unnecessary permissions are added.
 - UI can open Android Accessibility Settings.
+- Skip-button detection, node traversal, and click execution are not implemented in this stage.
 
 ## 3. Emulator Event Logging
 
@@ -43,7 +44,9 @@ Acceptance criteria:
 
 - Matching is case-insensitive.
 - Matching is whitespace-normalized.
-- Initial labels `Skip ad` and `Skip ads` are recognized.
+- Initial possible labels `Skip`, `Skip >|`, `Skip ad`, and `Skip ads` are recognized where exposed by accessibility APIs.
+- Matching inspects both `AccessibilityNodeInfo.text` and `AccessibilityNodeInfo.contentDescription`.
+- Matching does not assume the visible label exactly matches the accessibility label.
 - Matching logic is unit-tested without Android framework dependencies where practical.
 
 ## 6. Node Click Execution

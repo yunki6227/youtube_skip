@@ -1,12 +1,13 @@
 # YouTube Skip
 
-YouTube Skip is an Android-only Kotlin app intended to explore automatic activation of the visible YouTube "Skip ad" accessibility control. The current project is only a bootstrap shell: it does not skip ads yet and does not register an accessibility service yet.
+YouTube Skip is an Android-only Kotlin app intended to explore automatic activation of the visible YouTube "Skip ad" accessibility control. The current project registers an accessibility service shell, but it does not skip ads yet.
 
 ## Current Status
 
 - Minimal Android project created.
 - Jetpack Compose UI is present.
-- Accessibility functionality is not implemented yet.
+- Accessibility service registration is present.
+- Skip-button detection and click behavior are not implemented yet.
 - The initial development target is a Pixel 8 Android emulator.
 - Physical-device testing will eventually be required because accessibility behavior can differ from emulator behavior.
 

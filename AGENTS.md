@@ -46,8 +46,13 @@ Do not create empty abstraction classes before they are needed.
 
 - Process only `com.google.android.youtube`
 - Initially recognize:
+  - `Skip`
+  - `Skip >|`
   - `Skip ad`
   - `Skip ads`
+- `>|` is a visible symbol and may not be exposed literally in the accessibility tree
+- Future detection must inspect both `AccessibilityNodeInfo.text` and `AccessibilityNodeInfo.contentDescription`
+- Do not assume the visible button label exactly matches the accessibility label
 - Matching must be case-insensitive and whitespace-normalized
 - Prefer accessibility-node `ACTION_CLICK`
 - If the matched node is not clickable, search for a clickable ancestor

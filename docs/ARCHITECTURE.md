@@ -5,11 +5,13 @@
 ```text
 app/src/main/java/com/yunki/youtubeskip/
   MainActivity.kt
+  accessibility/
+    YouTubeAccessibilityService.kt
   ui/
     HomeScreen.kt
 ```
 
-The current app is a minimal Compose shell. Accessibility behavior is not implemented yet.
+The current app registers a minimal accessibility service shell and provides a Compose button that opens Android Accessibility Settings. Skip-button detection, node traversal, and click behavior are not implemented yet.
 
 ## Planned Package Structure
 
@@ -38,7 +40,7 @@ Planned classes should be added only when they have real behavior.
 
 ### `YouTubeAccessibilityService`
 
-Planned Android framework entry point for accessibility events. It should remain thin: validate event source, debounce event handling, delegate node traversal and detection, and trigger click execution only through dedicated collaborators.
+Current Android framework entry point for accessibility events. It should remain thin: validate event source, debounce event handling, delegate node traversal and detection, and trigger click execution only through dedicated collaborators.
 
 ### `AccessibilityNodeScanner`
 
@@ -50,7 +52,7 @@ Planned component that receives candidate nodes and returns detection results fo
 
 ### `SkipButtonMatchers`
 
-Planned pure matching helpers for case-insensitive, whitespace-normalized text matching. Initial target labels are `Skip ad` and `Skip ads`.
+Planned pure matching helpers for case-insensitive, whitespace-normalized text matching. Initial possible target labels are `Skip`, `Skip >|`, `Skip ad`, and `Skip ads`. The visible `>|` symbol may not be exposed literally in the accessibility tree, so future detection must inspect both `AccessibilityNodeInfo.text` and `AccessibilityNodeInfo.contentDescription` and must not assume the visible label exactly matches the accessibility label.
 
 ### `NodeClickExecutor`
 
@@ -70,7 +72,7 @@ Current Compose UI shows the app status and target app. Future UI can expose loc
 2. `YouTubeAccessibilityService` ignores events outside `com.google.android.youtube`.
 3. The service applies debounce and cooldown rules.
 4. `AccessibilityNodeScanner` gathers relevant visible nodes.
-5. `SkipButtonDetector` checks normalized text using `SkipButtonMatchers`.
+5. `SkipButtonDetector` checks normalized text and content descriptions using `SkipButtonMatchers`.
 6. `NodeClickExecutor` activates the best matched actionable node.
 7. The service records only local operational state needed for cooldown or UI status.
 
