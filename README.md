@@ -7,7 +7,9 @@ YouTube Skip is an Android-only Kotlin app intended to explore automatic activat
 - Minimal Android project created.
 - Jetpack Compose UI is present.
 - Accessibility service registration is present.
+- Debug-only emulator event logging is present for supported YouTube accessibility events.
 - Skip-button detection and click behavior are not implemented yet.
+- Accessibility node inspection is not implemented yet.
 - The initial development target is a Pixel 8 Android emulator.
 - Physical-device testing will eventually be required because accessibility behavior can differ from emulator behavior.
 
@@ -58,6 +60,18 @@ Run Android lint:
 ```sh
 ./gradlew lint
 ```
+
+## Debug Event Logging
+
+In debug builds, the accessibility service logs safe YouTube event metadata to Android Studio Logcat. Filter Logcat with:
+
+```text
+tag:YouTubeSkip
+```
+
+Logs contain only the supported event type name, the package name `com.google.android.youtube`, and the event timestamp. They do not include node text, content descriptions, view IDs, class names, window content, user-entered text, URLs, or account information.
+
+Node inspection, skip-button detection, and clicking are not implemented yet.
 
 ## Roadmap
 

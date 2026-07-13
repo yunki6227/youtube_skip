@@ -6,12 +6,16 @@
 app/src/main/java/com/yunki/youtubeskip/
   MainActivity.kt
   accessibility/
+    AccessibilityEventLogPolicy.kt
+    AccessibilityServiceStatus.kt
     YouTubeAccessibilityService.kt
   ui/
     HomeScreen.kt
+  util/
+    AppLogger.kt
 ```
 
-The current app registers a minimal accessibility service shell and provides a Compose button that opens Android Accessibility Settings. Skip-button detection, node traversal, and click behavior are not implemented yet.
+The current app registers a minimal accessibility service shell, provides a Compose button that opens Android Accessibility Settings, and emits debug-only safe Logcat messages for supported YouTube accessibility events. Skip-button detection, node traversal, and click behavior are not implemented yet.
 
 ## Planned Package Structure
 
@@ -40,7 +44,11 @@ Planned classes should be added only when they have real behavior.
 
 ### `YouTubeAccessibilityService`
 
-Current Android framework entry point for accessibility events. It should remain thin: validate event source, debounce event handling, delegate node traversal and detection, and trigger click execution only through dedicated collaborators.
+Current Android framework entry point for accessibility events. It remains thin: ignore null and non-YouTube events, handle only window content/state changes, and emit safe debug-only event logs through `AppLogger`. Future node traversal, detection, and click execution should still be delegated to dedicated collaborators.
+
+### `AccessibilityEventLogPolicy`
+
+Current helper for readable event type names and log-only throttling. It only supports `WINDOW_CONTENT_CHANGED` and `WINDOW_STATE_CHANGED`; unknown event types are ignored.
 
 ### `AccessibilityNodeScanner`
 
@@ -64,7 +72,7 @@ Planned local preferences wrapper for future user-facing settings. It must not s
 
 ### Compose UI
 
-Current Compose UI shows the app status and target app. Future UI can expose local status/settings without analytics, network calls, accounts, or ads.
+Current Compose UI shows the app status, target app, and a short Logcat note. Future UI can expose local status/settings without analytics, network calls, accounts, or ads.
 
 ## Intended Event Flow
 

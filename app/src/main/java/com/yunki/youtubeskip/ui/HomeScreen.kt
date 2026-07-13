@@ -78,6 +78,10 @@ fun HomeScreen(
                 text = stringResource(R.string.target_app_youtube),
                 style = MaterialTheme.typography.bodyLarge,
             )
+            Text(
+                text = stringResource(R.string.event_logging_logcat_note),
+                style = MaterialTheme.typography.bodyMedium,
+            )
             Button(
                 onClick = onOpenAccessibilitySettings,
                 modifier = Modifier.fillMaxWidth(),

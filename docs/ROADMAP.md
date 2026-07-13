@@ -29,6 +29,9 @@ Acceptance criteria:
 - Local debug-only logs show relevant YouTube accessibility event types.
 - Release builds reduce or disable debug logging.
 - Logs do not collect or persist accessibility content.
+- Logs contain event type names and package name only, plus event timestamp.
+- Logcat can be filtered with `tag:YouTubeSkip`.
+- Node inspection, skip-button detection, and click execution are not implemented in this stage.
 
 ## 4. Accessibility Node-Tree Inspection
 

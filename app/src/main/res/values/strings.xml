@@ -5,6 +5,7 @@
     <string name="accessibility_service_enabled">Accessibility service: Enabled</string>
     <string name="accessibility_service_disabled">Accessibility service: Disabled</string>
     <string name="target_app_youtube">Target app: YouTube</string>
+    <string name="event_logging_logcat_note">Event logging is available in Android Studio Logcat while running a debug build.</string>
     <string name="open_accessibility_settings">Open Accessibility Settings</string>
     <string name="accessibility_service_label">YouTube Skip</string>
     <string name="accessibility_service_summary">Receives YouTube accessibility events for future skip-button support.</string>
