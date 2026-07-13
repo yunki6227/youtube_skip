@@ -11,9 +11,13 @@ import com.yunki.youtubeskip.detection.SkipButtonDetectionResult
 
 object AppLogger {
     private const val TAG = "YouTubeSkip"
+    const val DETAILED_ACCESSIBILITY_DIAGNOSTICS = false
 
     val isDebugBuild: Boolean
         get() = BuildConfig.DEBUG
+
+    val isDetailedAccessibilityDiagnosticsEnabled: Boolean
+        get() = isDebugBuild && DETAILED_ACCESSIBILITY_DIAGNOSTICS
 
     fun debug(message: String) {
         if (isDebugBuild) {
@@ -60,6 +64,14 @@ object AppLogger {
     fun logSkipClickResult(result: NodeClickExecutionResult) {
         val exceptionSuffix = result.exceptionClassName?.let { " exception=$it" }.orEmpty()
         debug("skipClick result=${result.status.logName}$exceptionSuffix")
+    }
+
+    fun logSkipDetectionResult(
+        result: String,
+        exceptionClassName: String? = null,
+    ) {
+        val exceptionSuffix = exceptionClassName?.let { " exception=$it" }.orEmpty()
+        debug("skipDetection result=$result$exceptionSuffix")
     }
 
     fun logSkipProcessingSuppressed(reason: String) {

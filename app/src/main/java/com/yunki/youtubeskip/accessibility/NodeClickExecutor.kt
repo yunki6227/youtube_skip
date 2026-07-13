@@ -8,7 +8,8 @@ enum class NodeClickExecutionStatus(
     SUCCESS("success"),
     ACTION_RETURNED_FALSE("action_returned_false"),
     TARGET_STALE_OR_UNAVAILABLE("target_stale_or_unavailable"),
-    TARGET_NO_LONGER_ENABLED_VISIBLE("target_no_longer_enabled_visible"),
+    TARGET_DISABLED("target_disabled"),
+    TARGET_NOT_VISIBLE("target_not_visible"),
     TARGET_ACTION_UNAVAILABLE("target_action_unavailable"),
     EXCEPTION("exception"),
 }
@@ -28,10 +29,11 @@ class NodeClickExecutor {
             val isVisible = safeClickRead { target.isVisibleToUser }
                 ?: return NodeClickExecutionResult(NodeClickExecutionStatus.TARGET_STALE_OR_UNAVAILABLE)
 
-            if (!isEnabled || !isVisible) {
-                return NodeClickExecutionResult(
-                    NodeClickExecutionStatus.TARGET_NO_LONGER_ENABLED_VISIBLE,
-                )
+            if (!isEnabled) {
+                return NodeClickExecutionResult(NodeClickExecutionStatus.TARGET_DISABLED)
+            }
+            if (!isVisible) {
+                return NodeClickExecutionResult(NodeClickExecutionStatus.TARGET_NOT_VISIBLE)
             }
 
             if (!AccessibilityActionNames.supportsAction(target, AccessibilityNodeInfo.ACTION_CLICK)) {

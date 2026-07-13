@@ -7,6 +7,16 @@
     <string name="target_app_youtube">Target app: YouTube</string>
     <string name="event_logging_logcat_note">Event logging is available in Android Studio Logcat while running a debug build.</string>
     <string name="automatic_skip_enabled">Automatic skip enabled</string>
+    <string name="accessibility_status_label">Accessibility service</string>
+    <string name="status_enabled">Enabled</string>
+    <string name="status_disabled">Disabled</string>
+    <string name="automatic_skip_label">Automatic skip</string>
+    <string name="automatic_skip_supporting_text">Automatically presses YouTube\'s visible Skip ad control.</string>
+    <string name="target_app_label">Target app</string>
+    <string name="target_app_youtube_value">YouTube</string>
+    <string name="successful_skips_label">Successful skips</string>
+    <string name="last_successful_skip_label">Last successful skip</string>
+    <string name="last_click_result_label">Last click result</string>
     <string name="open_accessibility_settings">Open Accessibility Settings</string>
     <string name="accessibility_service_label">YouTube Skip</string>
     <string name="accessibility_service_summary">Detects YouTube Skip ad controls and activates them with accessibility actions.</string>

@@ -6,7 +6,9 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import com.yunki.youtubeskip.detection.SkipButtonDetector
+import com.yunki.youtubeskip.detection.SkipButtonDetectionOutcome
 import com.yunki.youtubeskip.settings.AppPreferences
+import com.yunki.youtubeskip.settings.LastClickResult
 import com.yunki.youtubeskip.util.AppLogger
 
 class YouTubeAccessibilityService : AccessibilityService() {
@@ -30,7 +32,9 @@ class YouTubeAccessibilityService : AccessibilityService() {
 
         val eventTypeName = AccessibilityEventLogPolicy.eventTypeName(event.eventType) ?: return
         val eventTimeMillis = event.eventTime.takeIf { it > 0L } ?: SystemClock.uptimeMillis()
-        if (eventLogThrottle.shouldLog(event.eventType, eventTimeMillis)) {
+        if (AppLogger.isDetailedAccessibilityDiagnosticsEnabled &&
+            eventLogThrottle.shouldLog(event.eventType, eventTimeMillis)
+        ) {
             AppLogger.debug(
                 "accessibilityEvent type=$eventTypeName package=$packageName eventTime=$eventTimeMillis",
             )
@@ -66,21 +70,38 @@ class YouTubeAccessibilityService : AccessibilityService() {
 
         val root = rootInActiveWindow
         if (root == null) {
+            AppLogger.logSkipDetectionResult("root_unavailable")
+            appPreferences.recordClickResult(LastClickResult.TARGET_UNAVAILABLE)
             logNodeScanRootNull(eventTypeName)
             return
         }
 
-        val detection = skipButtonDetector.detect(root)
+        val detectionOutcome = skipButtonDetector.detectOutcome(root)
         maybeLogNodeScan(root, eventTypeName, nowMillis)
 
-        if (detection == null) {
-            return
+        val detection = when (detectionOutcome) {
+            is SkipButtonDetectionOutcome.Detected -> detectionOutcome.result
+            SkipButtonDetectionOutcome.NoSemanticCandidate -> return
+            SkipButtonDetectionOutcome.NoValidClickTarget -> {
+                AppLogger.logSkipDetectionResult("no_valid_click_target")
+                appPreferences.recordClickResult(LastClickResult.NO_VALID_CLICK_TARGET)
+                return
+            }
+            is SkipButtonDetectionOutcome.Exception -> {
+                AppLogger.logSkipDetectionResult(
+                    result = "exception",
+                    exceptionClassName = detectionOutcome.exceptionClassName,
+                )
+                appPreferences.recordClickResult(LastClickResult.EXCEPTION)
+                return
+            }
         }
 
         AppLogger.logSkipDetected(detection)
         AppLogger.logSkipClickAttempt()
         val clickResult = nodeClickExecutor.click(detection.targetNode)
         AppLogger.logSkipClickResult(clickResult)
+        appPreferences.recordClickResult(clickResult.toLastClickResult())
 
         if (clickResult.isSuccess) {
             successfulClickCooldown.recordSuccessfulClick(nowMillis)
@@ -93,7 +114,7 @@ class YouTubeAccessibilityService : AccessibilityService() {
         eventTypeName: String,
         nowMillis: Long,
     ) {
-        if (!AppLogger.isDebugBuild) {
+        if (!AppLogger.isDetailedAccessibilityDiagnosticsEnabled) {
             return
         }
 
@@ -114,7 +135,7 @@ class YouTubeAccessibilityService : AccessibilityService() {
     }
 
     private fun logNodeScanRootNull(eventTypeName: String) {
-        if (AppLogger.isDebugBuild) {
+        if (AppLogger.isDetailedAccessibilityDiagnosticsEnabled) {
             AppLogger.logNodeScanRootNull(eventTypeName)
         }
     }
@@ -151,5 +172,18 @@ class YouTubeAccessibilityService : AccessibilityService() {
     private companion object {
         const val YOUTUBE_PACKAGE_NAME = "com.google.android.youtube"
         const val VERIFICATION_DELAY_MILLIS = 600L
+    }
+}
+
+private fun NodeClickExecutionResult.toLastClickResult(): LastClickResult {
+    return when (status) {
+        NodeClickExecutionStatus.SUCCESS -> LastClickResult.SUCCESS
+        NodeClickExecutionStatus.ACTION_RETURNED_FALSE -> LastClickResult.ACTION_RETURNED_FALSE
+        NodeClickExecutionStatus.TARGET_ACTION_UNAVAILABLE -> LastClickResult.NO_VALID_CLICK_TARGET
+        NodeClickExecutionStatus.TARGET_STALE_OR_UNAVAILABLE,
+        NodeClickExecutionStatus.TARGET_DISABLED,
+        NodeClickExecutionStatus.TARGET_NOT_VISIBLE,
+        -> LastClickResult.TARGET_UNAVAILABLE
+        NodeClickExecutionStatus.EXCEPTION -> LastClickResult.EXCEPTION
     }
 }

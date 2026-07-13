@@ -2,10 +2,10 @@ package com.yunki.youtubeskip.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -31,11 +31,15 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yunki.youtubeskip.R
 import com.yunki.youtubeskip.accessibility.AccessibilityServiceStatus
 import com.yunki.youtubeskip.settings.AppPreferences
+import com.yunki.youtubeskip.settings.LastClickResult
+import com.yunki.youtubeskip.settings.SkipStatistics
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun YouTubeSkipApp(onOpenAccessibilitySettings: () -> Unit = {}) {
     val isAccessibilityServiceEnabled = rememberAccessibilityServiceEnabled()
-    val automaticSkipState = rememberAutomaticSkipEnabled()
+    val appSettingsState = rememberAppSettingsState()
 
     MaterialTheme {
         Surface(
@@ -44,8 +48,9 @@ fun YouTubeSkipApp(onOpenAccessibilitySettings: () -> Unit = {}) {
         ) {
             HomeScreen(
                 isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
-                isAutomaticSkipEnabled = automaticSkipState.isEnabled,
-                onAutomaticSkipEnabledChange = automaticSkipState.onEnabledChange,
+                isAutomaticSkipEnabled = appSettingsState.isAutomaticSkipEnabled,
+                skipStatistics = appSettingsState.skipStatistics,
+                onAutomaticSkipEnabledChange = appSettingsState.onAutomaticSkipEnabledChange,
                 onOpenAccessibilitySettings = onOpenAccessibilitySettings,
             )
         }
@@ -56,6 +61,7 @@ fun YouTubeSkipApp(onOpenAccessibilitySettings: () -> Unit = {}) {
 fun HomeScreen(
     isAccessibilityServiceEnabled: Boolean,
     isAutomaticSkipEnabled: Boolean,
+    skipStatistics: SkipStatistics,
     onAutomaticSkipEnabledChange: (Boolean) -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -74,37 +80,35 @@ fun HomeScreen(
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = stringResource(
-                    if (isAccessibilityServiceEnabled) {
-                        R.string.accessibility_service_enabled
-                    } else {
-                        R.string.accessibility_service_disabled
-                    },
-                ),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = stringResource(R.string.target_app_youtube),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
                 text = stringResource(R.string.event_logging_logcat_note),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.automatic_skip_enabled),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Switch(
-                    checked = isAutomaticSkipEnabled,
-                    onCheckedChange = onAutomaticSkipEnabledChange,
-                )
-            }
+            StatusRow(
+                label = stringResource(R.string.accessibility_status_label),
+                value = stringResource(
+                    if (isAccessibilityServiceEnabled) R.string.status_enabled else R.string.status_disabled,
+                ),
+            )
+            AutomaticSkipRow(
+                isAutomaticSkipEnabled = isAutomaticSkipEnabled,
+                onAutomaticSkipEnabledChange = onAutomaticSkipEnabledChange,
+            )
+            StatusRow(
+                label = stringResource(R.string.target_app_label),
+                value = stringResource(R.string.target_app_youtube_value),
+            )
+            StatusRow(
+                label = stringResource(R.string.successful_skips_label),
+                value = skipStatistics.successfulSkipCount.toString(),
+            )
+            StatusRow(
+                label = stringResource(R.string.last_successful_skip_label),
+                value = formatLastSuccessfulSkip(skipStatistics.lastSuccessfulSkipTimestampMillis),
+            )
+            StatusRow(
+                label = stringResource(R.string.last_click_result_label),
+                value = skipStatistics.lastClickResult.displayText,
+            )
             Button(
                 onClick = onOpenAccessibilitySettings,
                 modifier = Modifier.fillMaxWidth(),
@@ -112,6 +116,58 @@ fun HomeScreen(
                 Text(text = stringResource(R.string.open_accessibility_settings))
             }
         }
+    }
+}
+
+@Composable
+private fun AutomaticSkipRow(
+    isAutomaticSkipEnabled: Boolean,
+    onAutomaticSkipEnabledChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.automatic_skip_label),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = stringResource(R.string.automatic_skip_supporting_text),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        Switch(
+            checked = isAutomaticSkipEnabled,
+            onCheckedChange = onAutomaticSkipEnabledChange,
+        )
+    }
+}
+
+@Composable
+private fun StatusRow(
+    label: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 
@@ -146,26 +202,59 @@ private fun rememberAccessibilityServiceEnabled(): Boolean {
     return isEnabled
 }
 
-private data class AutomaticSkipState(
-    val isEnabled: Boolean,
-    val onEnabledChange: (Boolean) -> Unit,
+private data class AppSettingsState(
+    val isAutomaticSkipEnabled: Boolean,
+    val skipStatistics: SkipStatistics,
+    val onAutomaticSkipEnabledChange: (Boolean) -> Unit,
 )
 
 @Composable
-private fun rememberAutomaticSkipEnabled(): AutomaticSkipState {
+private fun rememberAppSettingsState(): AppSettingsState {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val preferences = remember(context) { AppPreferences(context) }
-    var isEnabled by remember {
-        mutableStateOf(preferences.isAutomaticSkipEnabled())
+    var isAutomaticSkipEnabled by remember {
+        mutableStateOf(preferences.automaticSkipEnabled)
+    }
+    var skipStatistics by remember {
+        mutableStateOf(preferences.skipStatistics())
     }
 
-    return AutomaticSkipState(
-        isEnabled = isEnabled,
-        onEnabledChange = { enabled ->
+    DisposableEffect(context, lifecycleOwner) {
+        fun refreshSettingsState() {
+            isAutomaticSkipEnabled = preferences.automaticSkipEnabled
+            skipStatistics = preferences.skipStatistics()
+        }
+
+        refreshSettingsState()
+
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshSettingsState()
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    return AppSettingsState(
+        isAutomaticSkipEnabled = isAutomaticSkipEnabled,
+        skipStatistics = skipStatistics,
+        onAutomaticSkipEnabledChange = { enabled ->
             preferences.setAutomaticSkipEnabled(enabled)
-            isEnabled = enabled
+            isAutomaticSkipEnabled = enabled
         },
     )
+}
+
+private fun formatLastSuccessfulSkip(timestampMillis: Long?): String {
+    return timestampMillis
+        ?.let { DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it)) }
+        ?: LastClickResult.NONE.displayText
 }
 
 @Preview(showBackground = true)
@@ -175,6 +264,11 @@ private fun HomeScreenPreview() {
         HomeScreen(
             isAccessibilityServiceEnabled = false,
             isAutomaticSkipEnabled = true,
+            skipStatistics = SkipStatistics(
+                successfulSkipCount = 0,
+                lastSuccessfulSkipTimestampMillis = null,
+                lastClickResult = LastClickResult.NONE,
+            ),
             onAutomaticSkipEnabledChange = {},
             onOpenAccessibilitySettings = {},
         )

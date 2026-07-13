@@ -100,6 +100,11 @@ Acceptance criteria:
 - UI can open Accessibility Settings.
 - Any settings are local-only.
 - UI does not add networking, analytics, accounts, or ads.
+- `Automatic skip` is persisted in `SharedPreferences` and defaults to enabled.
+- UI shows successful skip count, last successful skip time, and last click result.
+- Last click result uses structured values such as success, action returned false, no valid click target, target unavailable, and exception.
+- UI refreshes settings and statistics on resume.
+- Compact logs remain available while detailed diagnostics are debug-only and off by default.
 
 ## 9. Emulator Integration Testing
 

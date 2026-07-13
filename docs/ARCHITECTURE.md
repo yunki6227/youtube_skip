@@ -29,7 +29,7 @@ app/src/main/java/com/yunki/youtubeskip/
     AppLogger.kt
 ```
 
-The current app registers an accessibility service, provides Compose controls for Android Accessibility Settings and a local automatic-skip toggle, emits debug-only safe Logcat messages for supported YouTube accessibility events, performs bounded debug-only skip diagnostics, and executes the first semantic `ACTION_CLICK` skip path for emulator validation.
+The current app registers an accessibility service, provides Compose controls for Android Accessibility Settings and a local automatic-skip toggle, shows local skip statistics, emits compact debug-only Logcat messages, keeps deeper diagnostics behind a debug-only constant, and executes the first semantic `ACTION_CLICK` skip path for emulator validation.
 
 ## Planned Package Structure
 
@@ -58,7 +58,7 @@ Planned classes should be added only when they have real behavior.
 
 ### `YouTubeAccessibilityService`
 
-Current Android framework entry point for accessibility events. It remains thin: ignore null and non-YouTube events, handle only window content/state changes, emit safe debug-only event logs through `AppLogger`, enforce the local automatic-skip preference, apply event debounce and successful-click cooldown, delegate semantic detection to `SkipButtonDetector`, delegate click execution to `NodeClickExecutor`, and schedule one-time post-click verification.
+Current Android framework entry point for accessibility events. It remains thin: ignore null and non-YouTube events, handle only window content/state changes, enforce the local automatic-skip preference on each event, apply event debounce and successful-click cooldown, delegate semantic detection to `SkipButtonDetector`, delegate click execution to `NodeClickExecutor`, record lightweight local click results, and schedule one-time post-click verification.
 
 ### `AccessibilityEventLogPolicy`
 
@@ -66,7 +66,7 @@ Current helper for readable event type names and log-only throttling. It only su
 
 ### `AccessibilityNodeScanner`
 
-Current debug-only component responsible for safe, iterative traversal of visible accessibility node trees from YouTube. It visits at most 200 nodes, scans to depth 20, skips editable/input-looking nodes for logging, keeps only immutable snapshots, and handles stale nodes defensively. When it encounters a focused skip-related diagnostic candidate, it captures the candidate plus up to six ancestors as immutable data. General node snapshot logging is reduced during normal automatic execution; `skipCandidate`, `skipAncestor`, and `skipTarget` diagnostics remain available. It does not click, mutate, persist, or transmit node data.
+Current debug-only component responsible for safe, iterative traversal of visible accessibility node trees from YouTube. It visits at most 200 nodes, scans to depth 20, skips editable/input-looking nodes for logging, keeps only immutable snapshots, and handles stale nodes defensively. When it encounters a focused skip-related diagnostic candidate, it captures the candidate plus up to six ancestors as immutable data. It runs only when `AppLogger.isDetailedAccessibilityDiagnosticsEnabled` is true, which requires a debug build and `DETAILED_ACCESSIBILITY_DIAGNOSTICS = true`. It does not click, mutate, persist, or transmit node data.
 
 ### `AccessibilityNodeSnapshot`
 
@@ -114,11 +114,15 @@ Current pure guards for a 350 ms event-processing debounce, a 3-second successfu
 
 ### `AppPreferences`
 
-Current local `SharedPreferences` wrapper for the `Automatic skip enabled` switch. It defaults to enabled and stores only this local boolean; it does not store YouTube screen text or accessibility content.
+Current local `SharedPreferences` wrapper for the `Automatic skip` switch and local statistics. Automatic skip defaults to enabled. Statistics include successful skip count, last successful skip timestamp, and a structured last click result. It does not store YouTube screen text, node content, bounds, or accessibility screen data.
 
 ### Compose UI
 
-Current Compose UI shows the app status, target app, and a short Logcat note. Future UI can expose local status/settings without analytics, network calls, accounts, or ads.
+Current Compose UI shows the app title, accessibility service status, `Automatic skip` switch with supporting text, target app, successful skip count, last successful skip time, last click result, and the Accessibility Settings button. UI state refreshes on resume so preference and statistics changes are visible after returning to the app.
+
+### `AppLogger`
+
+Current logging helper. Compact debug logs remain enabled for detection, click attempts, click results, verification, and meaningful failures. General accessibility-event logs, scan summaries, full node logs, and candidate ancestry diagnostics are off by default behind `DETAILED_ACCESSIBILITY_DIAGNOSTICS = false`; those diagnostics never run in release builds.
 
 ## Intended Event Flow
 
@@ -126,14 +130,16 @@ Current Compose UI shows the app status, target app, and a short Logcat note. Fu
 2. `YouTubeAccessibilityService` ignores events outside `com.google.android.youtube`.
 3. The service logs safe debug-only event metadata for supported event types.
 4. If automatic skip is disabled locally, detection and clicking stop.
-5. A 350 ms debounce suppresses event bursts before detection.
-6. A 3-second cooldown suppresses repeated processing after a successful click.
-7. The service reads `rootInActiveWindow`.
-8. `SkipButtonDetector` searches for one semantic `Skip ad` / `Skip ads` target.
-9. `NodeClickTargetResolver` chooses the nearest enabled, visible `ACTION_CLICK` node.
-10. `NodeClickExecutor` invokes `performAction(ACTION_CLICK)` once.
-11. A successful click schedules a non-blocking verification about 600 ms later.
-12. Debug diagnostics log `skipDetected`, `skipClick`, `skipVerification`, and skip-candidate ancestor details.
+5. Detailed diagnostics do not run merely because automatic skipping is disabled.
+6. A 350 ms debounce suppresses event bursts before detection.
+7. A 3-second cooldown suppresses repeated processing after a successful click.
+8. The service reads `rootInActiveWindow`.
+9. `SkipButtonDetector` searches for one semantic `Skip ad` / `Skip ads` target.
+10. `NodeClickTargetResolver` chooses the nearest enabled, visible `ACTION_CLICK` node.
+11. `NodeClickExecutor` invokes `performAction(ACTION_CLICK)` once.
+12. The service records the click result; success increments the count and updates the last successful timestamp.
+13. A successful click schedules a non-blocking verification about 600 ms later.
+14. Compact debug logs include `skipDetected`, `skipClick`, `skipVerification`, and meaningful failures.
 
 ## Intended Click Fallback Order
 
@@ -151,3 +157,5 @@ Fixed coordinates are excluded because YouTube layouts vary by device, density, 
 OCR is excluded because the intended implementation should rely on accessibility semantics, not visual scraping.
 
 Screenshots and screen recording are excluded to keep privacy boundaries tight and avoid unnecessary sensitive-data handling.
+
+Korean-label support, Samsung-specific behavior, and gesture fallback are excluded from the current MVP cleanup scope.

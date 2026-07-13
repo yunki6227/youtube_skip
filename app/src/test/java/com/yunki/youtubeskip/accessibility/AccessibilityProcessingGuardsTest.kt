@@ -45,8 +45,12 @@ class AccessibilityProcessingGuardsTest {
         assertEquals("success", NodeClickExecutionStatus.SUCCESS.logName)
         assertEquals("action_returned_false", NodeClickExecutionStatus.ACTION_RETURNED_FALSE.logName)
         assertEquals(
-            "target_no_longer_enabled_visible",
-            NodeClickExecutionStatus.TARGET_NO_LONGER_ENABLED_VISIBLE.logName,
+            "target_disabled",
+            NodeClickExecutionStatus.TARGET_DISABLED.logName,
+        )
+        assertEquals(
+            "target_not_visible",
+            NodeClickExecutionStatus.TARGET_NOT_VISIBLE.logName,
         )
     }
 

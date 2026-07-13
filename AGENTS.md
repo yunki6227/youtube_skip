@@ -58,6 +58,8 @@ Do not create empty abstraction classes before they are needed.
 - Prefer accessibility-node `ACTION_CLICK`
 - If the matched node is not clickable, search for a clickable ancestor
 - The first production click path resolves the nearest enabled, visible node that explicitly supports `ACTION_CLICK`
+- Automatic skip is controlled by a local SharedPreferences setting that defaults to enabled
+- Detailed accessibility diagnostics should stay debug-only and off by default
 - Gesture dispatch may exist only as an isolated fallback
 - Never use hardcoded or fixed screen coordinates
 - Debounce accessibility events

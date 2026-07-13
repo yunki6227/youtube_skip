@@ -3,6 +3,7 @@ package com.yunki.youtubeskip.detection
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import com.yunki.youtubeskip.accessibility.AccessibilityNodeSnapshot
+import com.yunki.youtubeskip.accessibility.NodeClickTargetType
 import com.yunki.youtubeskip.accessibility.NodeClickTargetResolver
 import com.yunki.youtubeskip.accessibility.ResolvedNodeClickTarget
 
@@ -17,6 +18,20 @@ data class SkipButtonDetectionResult(
 ) {
     val targetNode: AccessibilityNodeInfo
         get() = clickTarget.node
+}
+
+sealed interface SkipButtonDetectionOutcome {
+    data class Detected(
+        val result: SkipButtonDetectionResult,
+    ) : SkipButtonDetectionOutcome
+
+    data object NoSemanticCandidate : SkipButtonDetectionOutcome
+
+    data object NoValidClickTarget : SkipButtonDetectionOutcome
+
+    data class Exception(
+        val exceptionClassName: String,
+    ) : SkipButtonDetectionOutcome
 }
 
 data class SkipButtonCandidateRanking(
@@ -46,12 +61,33 @@ class SkipButtonDetector(
     private val maxDepth: Int = DEFAULT_MAX_DEPTH,
 ) {
     fun detect(root: AccessibilityNodeInfo): SkipButtonDetectionResult? {
-        val candidates = findCandidates(root)
-        val preferredRanking = SkipButtonCandidateDeduplicator
-            .selectPreferredUnique(candidates.map { it.ranking })
-            .firstOrNull() ?: return null
+        return (detectOutcome(root) as? SkipButtonDetectionOutcome.Detected)?.result
+    }
 
-        return candidates.firstOrNull { it.ranking == preferredRanking }?.result
+    fun detectOutcome(root: AccessibilityNodeInfo): SkipButtonDetectionOutcome {
+        return try {
+            val searchResult = findCandidates(root)
+            val preferredRanking = SkipButtonCandidateDeduplicator
+                .selectPreferredUnique(searchResult.candidates.map { it.ranking })
+                .firstOrNull()
+
+            if (preferredRanking != null) {
+                val detection = searchResult.candidates
+                    .firstOrNull { it.ranking == preferredRanking }
+                    ?.result
+                if (detection != null) {
+                    return SkipButtonDetectionOutcome.Detected(detection)
+                }
+            }
+
+            if (searchResult.semanticCandidateFound) {
+                SkipButtonDetectionOutcome.NoValidClickTarget
+            } else {
+                SkipButtonDetectionOutcome.NoSemanticCandidate
+            }
+        } catch (exception: RuntimeException) {
+            SkipButtonDetectionOutcome.Exception(exception::class.java.simpleName)
+        }
     }
 
     fun containsSemanticSkipCandidate(root: AccessibilityNodeInfo): Boolean {
@@ -82,13 +118,14 @@ class SkipButtonDetector(
         return false
     }
 
-    private fun findCandidates(root: AccessibilityNodeInfo): List<DetectionCandidate> {
+    private fun findCandidates(root: AccessibilityNodeInfo): DetectionSearchResult {
         val candidates = mutableListOf<DetectionCandidate>()
         val queue = ArrayDeque<NodeWithDepth>()
         queue.add(NodeWithDepth(root, depth = 0))
 
         var visitedNodeCount = 0
         var traversalOrder = 0
+        var semanticCandidateFound = false
 
         while (queue.isNotEmpty() && visitedNodeCount < maxNodeCount) {
             val current = queue.removeFirst()
@@ -109,8 +146,9 @@ class SkipButtonDetector(
             )
 
             if (labelMatch != null) {
+                semanticCandidateFound = true
                 val clickTarget = clickTargetResolver.resolve(node)
-                if (clickTarget != null) {
+                if (clickTarget?.targetType == NodeClickTargetType.ACTION_CLICK) {
                     candidates.add(
                         DetectionCandidate(
                             ranking = SkipButtonCandidateRanking(
@@ -138,7 +176,10 @@ class SkipButtonDetector(
             enqueueChildren(queue, node, current.depth)
         }
 
-        return candidates
+        return DetectionSearchResult(
+            candidates = candidates,
+            semanticCandidateFound = semanticCandidateFound,
+        )
     }
 
     private fun enqueueChildren(
@@ -179,6 +220,11 @@ class SkipButtonDetector(
     private data class DetectionCandidate(
         val ranking: SkipButtonCandidateRanking,
         val result: SkipButtonDetectionResult,
+    )
+
+    private data class DetectionSearchResult(
+        val candidates: List<DetectionCandidate>,
+        val semanticCandidateFound: Boolean,
     )
 
     private companion object {
