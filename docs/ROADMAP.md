@@ -46,33 +46,51 @@ Acceptance criteria:
 - Logs are not persisted or transmitted.
 - Clicking and skip-button detection are not implemented in this stage.
 
-## 5. Pure Text Normalization and Matching
+## 4.5. Skip Candidate Action-Target Diagnostics
 
 Acceptance criteria:
 
-- Matching is case-insensitive.
-- Matching is whitespace-normalized.
-- Initial possible labels `Skip`, `Skip >|`, `Skip ad`, and `Skip ads` are recognized where exposed by accessibility APIs.
-- Matching inspects both `AccessibilityNodeInfo.text` and `AccessibilityNodeInfo.contentDescription`.
-- Matching does not assume the visible label exactly matches the accessibility label.
-- Matching logic is unit-tested without Android framework dependencies where practical.
+- Observed YouTube hierarchy is documented: a visible skip control may expose a non-clickable `contentDescription="Skip ad"` node, a non-clickable `text="Skip"` child, and a clickable ancestor in the same region.
+- Exact skip-related diagnostic labels are matched without loose substring matching.
+- Candidate diagnostics include the matched node and up to six ancestors.
+- Diagnostics include supported accessibility action IDs and readable action names.
+- Diagnostics classify nodes as direct click action, clickable flag only, non-clickable, disabled, or not visible.
+- Diagnostics recommend a target for investigation only; no automatic click is performed.
+- Repeated identical candidate diagnostics are suppressed in memory for a short window.
+- Logcat can be searched with `skipCandidate`, `skipAncestor`, and `skipTarget`.
+- Final skip-button detection and click execution are not implemented in this stage.
 
-## 6. Node Click Execution
-
-Acceptance criteria:
-
-- Click execution prefers node `ACTION_CLICK`.
-- If the matched node is not clickable, a clickable ancestor is used.
-- Fixed coordinates are not used.
-- Gesture dispatch, if needed, is isolated as a fallback.
-
-## 7. Debounce and Successful-Click Cooldown
+## 5. Semantic Detection and Accessibility Click Execution
 
 Acceptance criteria:
 
-- Event bursts are debounced.
+- Production detection prioritizes semantic labels `Skip ad` and `Skip ads`.
+- Matching is exact, case-insensitive, and whitespace-normalized.
+- Plain `text="Skip"` and visible-symbol variants remain diagnostic-only and do not independently trigger clicking.
+- The confirmed hierarchy is used: a semantic `Skip ad` candidate can resolve to a nearest clickable `FrameLayout` ancestor with `ACTION_CLICK`.
+- The click target resolver walks up through at most four ancestors.
+- Click execution invokes `performAction(AccessibilityNodeInfo.ACTION_CLICK)` once on a resolved enabled, visible, explicit-click target.
+- Fixed coordinates, OCR, screenshots, networking, analytics, and gesture tapping are not used.
+- A 350 ms event debounce and 3-second successful-click cooldown are present.
+- Post-click verification runs once about 600 ms after success and does not click again.
+- A local `Automatic skip enabled` switch defaults to enabled.
+- Unit tests cover matching, target resolution policy, deduplication, debounce, cooldown, click-result mapping, and verification classification.
+
+## 6. Gesture Fallback Evaluation
+
+Acceptance criteria:
+
+- Consider gesture dispatch only if emulator and device validation show that accessibility `ACTION_CLICK` is insufficient.
+- Gesture fallback, if added, remains isolated and never uses hardcoded fixed coordinates.
+- OCR and screenshots remain excluded.
+
+## 7. Debounce and Successful-Click Cooldown Refinement
+
+Acceptance criteria:
+
+- Tune debounce and cooldown using emulator and physical-device observations.
 - Successful clicks start a cooldown.
-- Cooldown behavior is covered by tests where practical.
+- Cooldown behavior remains covered by tests where practical.
 
 ## 8. Compose Status/Settings UI
 

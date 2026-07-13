@@ -54,8 +54,10 @@ Do not create empty abstraction classes before they are needed.
 - Future detection must inspect both `AccessibilityNodeInfo.text` and `AccessibilityNodeInfo.contentDescription`
 - Do not assume the visible button label exactly matches the accessibility label
 - Matching must be case-insensitive and whitespace-normalized
+- Production clicking currently triggers only from exact semantic `Skip ad` / `Skip ads` labels
 - Prefer accessibility-node `ACTION_CLICK`
 - If the matched node is not clickable, search for a clickable ancestor
+- The first production click path resolves the nearest enabled, visible node that explicitly supports `ACTION_CLICK`
 - Gesture dispatch may exist only as an isolated fallback
 - Never use hardcoded or fixed screen coordinates
 - Debounce accessibility events

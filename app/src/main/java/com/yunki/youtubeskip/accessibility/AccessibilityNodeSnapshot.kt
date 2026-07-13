@@ -56,6 +56,7 @@ data class AccessibilityNodeSnapshot(
 
 data class AccessibilityNodeScanResult(
     val snapshots: List<AccessibilityNodeSnapshot>,
+    val skipCandidateDiagnostics: List<SkipCandidateDiagnostic> = emptyList(),
     val visitedNodeCount: Int,
     val truncated: Boolean,
 ) {
