@@ -1,0 +1,28 @@
+# Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin
+.kotlin/
+
+# Android local files
+local.properties
+captures/
+*.apk
+*.ap_
+*.aab
+*.hprof
+
+# macOS
+.DS_Store
+
+# Logs
+*.log

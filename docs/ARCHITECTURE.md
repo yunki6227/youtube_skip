@@ -1,0 +1,91 @@
+# Architecture
+
+## Current Package Structure
+
+```text
+app/src/main/java/com/yunki/youtubeskip/
+  MainActivity.kt
+  ui/
+    HomeScreen.kt
+```
+
+The current app is a minimal Compose shell. Accessibility behavior is not implemented yet.
+
+## Planned Package Structure
+
+```text
+app/src/main/java/com/yunki/youtubeskip/
+  MainActivity.kt
+  accessibility/
+    YouTubeAccessibilityService.kt
+    AccessibilityNodeScanner.kt
+    NodeClickExecutor.kt
+  detection/
+    SkipButtonDetector.kt
+    SkipButtonMatchers.kt
+    DetectionResult.kt
+  settings/
+    AppPreferences.kt
+  ui/
+    HomeScreen.kt
+  util/
+    AppLogger.kt
+```
+
+Planned classes should be added only when they have real behavior.
+
+## Planned Responsibilities
+
+### `YouTubeAccessibilityService`
+
+Planned Android framework entry point for accessibility events. It should remain thin: validate event source, debounce event handling, delegate node traversal and detection, and trigger click execution only through dedicated collaborators.
+
+### `AccessibilityNodeScanner`
+
+Planned component responsible for safe traversal of accessibility node trees from YouTube. It should handle null nodes and stale nodes defensively.
+
+### `SkipButtonDetector`
+
+Planned component that receives candidate nodes and returns detection results for visible, user-actionable skip controls.
+
+### `SkipButtonMatchers`
+
+Planned pure matching helpers for case-insensitive, whitespace-normalized text matching. Initial target labels are `Skip ad` and `Skip ads`.
+
+### `NodeClickExecutor`
+
+Planned component that prefers accessibility-node `ACTION_CLICK`, then searches for a clickable ancestor when the matched node itself is not clickable. Gesture dispatch may exist only as an isolated fallback.
+
+### `AppPreferences`
+
+Planned local preferences wrapper for future user-facing settings. It must not store YouTube screen text or accessibility content.
+
+### Compose UI
+
+Current Compose UI shows the app status and target app. Future UI can expose local status/settings without analytics, network calls, accounts, or ads.
+
+## Intended Event Flow
+
+1. Android delivers an accessibility event.
+2. `YouTubeAccessibilityService` ignores events outside `com.google.android.youtube`.
+3. The service applies debounce and cooldown rules.
+4. `AccessibilityNodeScanner` gathers relevant visible nodes.
+5. `SkipButtonDetector` checks normalized text using `SkipButtonMatchers`.
+6. `NodeClickExecutor` activates the best matched actionable node.
+7. The service records only local operational state needed for cooldown or UI status.
+
+## Intended Click Fallback Order
+
+1. Click the matched node with `ACTION_CLICK` when it is clickable.
+2. Search upward for a clickable ancestor and invoke `ACTION_CLICK`.
+3. Use gesture dispatch only as an isolated fallback if it becomes necessary.
+
+Fixed coordinates are never allowed.
+
+## Exclusions From the First Version
+
+Fixed coordinates are excluded because YouTube layouts vary by device, density, orientation, locale, and app version.
+
+OCR is excluded because the intended implementation should rely on accessibility semantics, not visual scraping.
+
+Screenshots and screen recording are excluded to keep privacy boundaries tight and avoid unnecessary sensitive-data handling.
